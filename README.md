@@ -8,6 +8,8 @@ The agent can:
 - Fetch stock prices (demo mode or using Alpha Vantage API)
 - Do math calculations
 - Explain basic financial concepts
+- Process and analyze PDF documents
+- Read and summarize CSV files
 
 ---
 
@@ -56,6 +58,7 @@ uvicorn main:app --reload
 
 ## Usage
 
+### Query Endpoint
 Send POST requests to `/query` with JSON body:
 
 ```json
@@ -64,7 +67,29 @@ Send POST requests to `/query` with JSON body:
 }
 ```
 
-Example with `curl`:
+For document analysis, include the filename:
+```json
+{
+  "query": "What is the net profit",
+  "filename": "sample_financial_summary.pdf"
+}
+```
+
+For math calculations:
+```json
+{
+  "query": "What is 5 * (3+2) ?"
+}
+```
+
+### File Upload
+Upload documents using the `/upload` endpoint:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/upload" -H "Content-Type: multipart/form-data" -F "file=@path/to/your/file.pdf"
+```
+
+Example with `curl` for querying:
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/query" -H "Content-Type: application/json" -d '{"query":"Explain compound interest"}'
@@ -86,3 +111,5 @@ You will get a JSON response like:
 - The math tool evaluates simple math expressions safely.
 - The concept explainer has some hardcoded definitions but can be extended.
 - The OpenAI LLM is used for language understanding and generation.
+- Supported file formats: PDF and CSV
+- Uploaded files are stored in the `uploaded_docs` directory

@@ -8,6 +8,8 @@ from langchain_core.tools import Tool
 from langchain.llms import LlamaCpp
 from langchain.prompts import PromptTemplate
 import requests
+import pandas as pd
+import fitz  # PyMuPDF
 
 # Load environment variables from .env file
 load_dotenv()
@@ -60,28 +62,34 @@ def safe_eval_math(*args, **kwargs):
     except Exception:
         return "Invalid math expression."
 
+def read_csv_summary(file_path: str) -> str:
+    try:
+        df = pd.read_csv(file_path)
+        summary = f"Columns: {', '.join(df.columns)}\n"
+        summary += f"Rows: {len(df)}\n"
+        summary += f"Sample:\n{df.head(3).to_string(index=False)}"
+        return summary
+    except Exception as e:
+        return f"Error reading CSV: {str(e)}"
+
+def read_pdf_text(file_path: str) -> str:
+    try:
+        doc = fitz.open(file_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text[:2000]  # Limit length
+    except Exception as e:
+        return f"Error reading PDF: {str(e)}"
+
 # List of tools available to the agent
 tools = [
-    Tool(
-        name="Stock Price",
-        func=get_stock_price,
-        description="Get the current stock price for a given symbol."
-    ),
-    Tool(
-        name="Concept Explainer",
-        func=explain_concept,
-        description="Get the basic definition of a financial concept."
-    ),
-    Tool(
-        name="Calculator",
-        func=safe_eval_math,
-        description="Useful for performing mathematical calculations."
-    ),
-    Tool(
-        name="Final Answer",
-        func=lambda x: x,
-        description="Use this to give your final answer to the user."
-    ),
+    Tool(name="Stock Price", func=get_stock_price, description="Get the current stock price for a given symbol."),
+    Tool(name="Concept Explainer", func=explain_concept, description="Get the basic definition of a financial concept."),
+    Tool(name="Calculator", func=safe_eval_math, description="Useful for performing mathematical calculations."),
+    Tool(name="CSV Reader", func=read_csv_summary, description="Reads financial data from a CSV file. Input should be the file path."),
+    Tool(name="PDF Reader", func=read_pdf_text, description="Reads financial text from a PDF file. Input should be the file path."),
+    Tool(name="Final Answer", func=lambda x: x, description="Use this to give your final answer to the user."),
 ]
 
 # Create a simple prompt template
